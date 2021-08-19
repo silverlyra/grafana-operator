@@ -5,7 +5,13 @@ REG?=quay.io
 SHELL=/bin/bash
 TAG?=v3.10.3
 PKG=github.com/grafana-operator/grafana-operator
-COMPILE_TARGET=./tmp/_output/bin/$(PROJECT)
+COMPILE_TARGET=./build/_output/bin/$(PROJECT)
+
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
+
+# list for multi-arch image publishing
+TARGET_ARCHS ?= amd64 arm64
 
 .PHONY: setup/travis
 setup/travis:
@@ -18,7 +24,15 @@ code/run:
 
 .PHONY: code/compile
 code/compile:
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o=$(COMPILE_TARGET) ./cmd/manager
+	GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o=$(COMPILE_TARGET)-$(GOARCH) ./cmd/manager
+
+.PHONY: code/compile/amd64
+code/compile/amd64:
+	GOOS=linux GOARCH=amd64 $(MAKE) code/compile
+
+.PHONY: code/compile/arm64
+code/compile/arm64:
+	GOOS=linux GOARCH=arm64 $(MAKE) code/compile
 
 .PHONY: code/gen
 code/gen:
